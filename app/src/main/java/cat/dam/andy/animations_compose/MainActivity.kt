@@ -31,9 +31,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import kotlinx.coroutines.delay
@@ -164,7 +166,7 @@ fun AnimationsContent(padding: PaddingValues) {
                     isMosquitoClicked = !isMosquitoClicked
                 }
         )
-
+        FrameAnimation()
         // Animacions pilotes
         AnimatedImage(
             resourceId = R.drawable.pilota,
@@ -277,3 +279,90 @@ fun AnimatedImage(resourceId: Int, contentDescription: String, modifier: Modifie
         modifier = modifier.graphicsLayer()
     )
 }
+
+@Composable
+fun FrameAnimation() {
+    // Llista de fotogrames del mosquit viu
+    val mosquitoFrameList = listOf(
+        ImageBitmap.imageResource(id = R.drawable.mosquit_1),
+        ImageBitmap.imageResource(id = R.drawable.mosquit_2),
+        ImageBitmap.imageResource(id = R.drawable.mosquit_3),
+        ImageBitmap.imageResource(id = R.drawable.mosquit_4),
+        ImageBitmap.imageResource(id = R.drawable.mosquit_5),
+        ImageBitmap.imageResource(id = R.drawable.mosquit_6),
+        ImageBitmap.imageResource(id = R.drawable.mosquit_7),
+        ImageBitmap.imageResource(id = R.drawable.mosquit_8),
+        ImageBitmap.imageResource(id = R.drawable.mosquit_9),
+        ImageBitmap.imageResource(id = R.drawable.mosquit_10),
+        ImageBitmap.imageResource(id = R.drawable.mosquit_11),
+        ImageBitmap.imageResource(id = R.drawable.mosquit_12),
+    )
+
+    // Llista de fotogrames del mosquit mort
+    val bloodFrameList = listOf(
+        ImageBitmap.imageResource(id = R.drawable.mosquit_mort_1),
+        ImageBitmap.imageResource(id = R.drawable.mosquit_mort_2),
+        ImageBitmap.imageResource(id = R.drawable.mosquit_mort_3),
+        ImageBitmap.imageResource(id = R.drawable.mosquit_mort_4),
+        ImageBitmap.imageResource(id = R.drawable.mosquit_mort_5),
+    )
+
+    // Estat per controlar si el mosquit està mort o viu
+    var isDead by remember { mutableStateOf(false) }
+
+    // Estat per controlar el fotograma actual
+    var currentFrame by remember { mutableStateOf(0) }
+
+    // Estat per controlar si s'ha de reproduir l'animació de mort una sola vegada
+    var playDeathAnimation by remember { mutableStateOf(false) }
+
+    // Inicia l'animació
+    LaunchedEffect(isDead, playDeathAnimation) {
+        while (true) {
+            if (playDeathAnimation) {
+                // Reproduir l'animació de mort una sola vegada
+                for (i in bloodFrameList.indices) {
+                    currentFrame = i
+                    delay(50) // Canvia el fotograma cada 50 ms
+                }
+                playDeathAnimation = false
+                isDead = true
+            } else if (!isDead) {
+                // Animació contínua del mosquit viu
+                currentFrame = (currentFrame + 1) % mosquitoFrameList.size
+                delay(50) // Canvia el fotograma cada 50 ms
+            } else {
+                // Si el mosquit està mort, no fem res
+                delay(50)
+            }
+        }
+    }
+
+    // Mostra la imatge actual segons l'estat
+    val currentImage = if (isDead) {
+        bloodFrameList.last() // Mostra l'últim fotograma de l'animació de mort
+    } else {
+        mosquitoFrameList[currentFrame]
+    }
+
+    // Contenidor que detecta clics
+    Box(
+        modifier = Modifier
+            .clickable {
+                if (!isDead) {
+                    playDeathAnimation = true // Inicia l'animació de mort
+                } else {
+                    isDead = false // Torna a l'animació del mosquit viu
+                }
+            }
+    ) {
+        Image(
+            bitmap = currentImage,
+            contentDescription = "Animació del mosquit",
+            modifier = Modifier
+                .padding(50.dp)
+                .scale(2.5f)
+        )
+    }
+}
+
